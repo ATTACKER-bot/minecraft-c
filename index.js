@@ -16,6 +16,59 @@ const config = {
   loginPassword: '87787787',
 };
 
+async function clickEmeralds(window) {
+  let clicks = 0;
+  for (let i = 0; i < window.slots.length && clicks < 36; i++) {
+    const slot = window.slots[i];
+    if (slot && slot.name === 'emerald' && typeof slot.slot === 'number') {
+      try {
+        await bot.clickWindow(slot.slot, 0, 1);
+        clicks++;
+        await new Promise(res => setTimeout(res, 100));
+      } catch (err) {
+        console.log(`❌ clickWindow xatolik: ${err.message}`);
+      }
+    }
+  }
+}
+
+async function goToCraftingTableAndCraft() {
+  const mcData = mcDataLoader(bot.version);
+  console.log('🧭 Crafting table qidirilmoqda...');
+  const table = bot.findBlock({
+    matching: block => bot.isABlock(block) && block.name === 'crafting_table',
+    maxDistance: 6,
+  });
+
+  if (!table) {
+    console.log('❌ Crafting table topilmadi');
+    return;
+  }
+
+  const recipe = bot.recipesFor(mcData.itemsByName.emerald_block.id, null, 1, table)[0];
+  if (!recipe) {
+    console.log('❌ Emerald block recipe topilmadi');
+    return;
+  }
+
+  await bot.pathfinder.setMovements(new Movements(bot, mcData));
+  await bot.pathfinder.goto(new goals.GoalBlock(table.position.x, table.position.y, table.position.z));
+
+  console.log('🎯 Crafting tablega bordi, craft qilinmoqda...');
+  await bot.craft(recipe, Math.floor(bot.inventory.count(mcData.itemsByName.emerald.id) / 9), table);
+  console.log('✅ Craft tugadi');
+
+  const emeraldBlocks = bot.inventory.items().filter(i => i.name === 'emerald_block');
+  for (const item of emeraldBlocks) {
+    await bot.tossStack(item);
+  }
+  console.log('🗑️ Emerald blocklar otildi');
+
+  setTimeout(() => {
+    bot.chat('/is shop Ores');
+  }, 3000);
+}
+
 function startBot() {
   bot = mineflayer.createBot({
     host: config.host,
@@ -36,12 +89,12 @@ function startBot() {
     }
   });
 
-  bot.on('spawn', () => {
+  bot.once('spawn', () => {
     console.log('✅ Bot spawn bo‘ldi!');
 
     setTimeout(() => {
       bot.chat('/is warp end');
-      console.log('📦 /is warp shop komandasi yuborildi');
+      console.log('📦 /is warp end komandasi yuborildi');
 
       setTimeout(() => {
         bot.chat('/is shop Ores');
@@ -50,56 +103,14 @@ function startBot() {
     }, 5000);
   });
 
-for (let i = 0; i < window.slots.length && clicks < 36; i++) {
-  const slot = window.slots[i];
-  if (slot && slot.name === 'emerald' && typeof slot.slot === 'number') {
-    try {
-      await bot.clickWindow(slot.slot, 0, 1);
-      clicks++;
-      await new Promise(res => setTimeout(res, 100));
-    } catch (err) {
-      console.log(`❌ clickWindow xatolik: ${err.message}`);
+  bot.on('windowOpen', async (window) => {
+    if (window.title.includes('Shop') || window.title.includes('Ores')) {
+      console.log(`🛒 "${window.title}" oynasi ochildi`);
+
+      await clickEmeralds(window);
+      await goToCraftingTableAndCraft();
     }
-  }
-}
-
-
-  async function goToCraftingTableAndCraft() {
-    const mcData = mcDataLoader(bot.version);
-    console.log('🧭 Crafting table qidirilmoqda...');
-    const table = bot.findBlock({
-      matching: block => bot.isABlock(block) && block.name === 'crafting_table',
-      maxDistance: 6
-    });
-
-    if (!table) {
-      console.log('❌ Crafting table topilmadi');
-      return;
-    }
-
-    const recipe = bot.recipesFor(mcData.itemsByName.emerald_block.id, null, 1, table)[0];
-    if (!recipe) {
-      console.log('❌ Emerald block recipe topilmadi');
-      return;
-    }
-
-    await bot.pathfinder.setMovements(new Movements(bot, mcData));
-    await bot.pathfinder.goto(new goals.GoalBlock(table.position.x, table.position.y, table.position.z));
-
-    console.log('🎯 Crafting tablega bordi, craft qilinmoqda...');
-    await bot.craft(recipe, Math.floor(bot.inventory.count(mcData.itemsByName.emerald.id) / 9), table);
-    console.log('✅ Craft tugadi');
-
-    const emeraldBlocks = bot.inventory.items().filter(i => i.name === 'emerald_block');
-    for (const item of emeraldBlocks) {
-      await bot.tossStack(item);
-    }
-    console.log('🗑️ Emerald blocklar otildi');
-
-    setTimeout(() => {
-      bot.chat('/is shop Ores');
-    }, 3000);
-  }
+  });
 
   bot.on('death', () => {
     console.log('☠️ Bot o‘ldi. /back yozilmoqda...');
