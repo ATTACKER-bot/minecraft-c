@@ -1,18 +1,15 @@
 {
   "name": "minecraft-bot",
   "version": "1.0.0",
-  "description": "Mineflayer bot using version 3.11.2",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "YourName",
-  "license": "MIT",
   "dependencies": {
-    "mineflayer": "3.11.2",
-    "mineflayer-pathfinder": "^1.3.0",
     "express": "^4.18.2",
+    "mineflayer": "^4.3.1",
+    "mineflayer-pathfinder": "^1.1.0",
     "vec3": "^0.1.7",
-    "minecraft-data": "^2.92.1"
+    "minecraft-data": "^2.81.0"
   }
 }
