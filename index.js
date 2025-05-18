@@ -50,24 +50,18 @@ function startBot() {
     }, 5000);
   });
 
-bot.on('windowOpen', async (window) => {
-  console.log('🪟 Do‘kon ochildi, emeraldlar olinmoqda...');
-  try {
-    let clicks = 0;
-    for (let i = 0; i < window.slots.length && clicks < 36; i++) {
-      const slot = window.slots[i];
-      if (slot && slot.name === 'emerald') {
-        await bot.clickWindow(slot.slot, 0, 1); // shift+click
-        clicks++;
-        await new Promise(res => setTimeout(res, 100)); // ozgina kutish
-      }
+for (let i = 0; i < window.slots.length && clicks < 36; i++) {
+  const slot = window.slots[i];
+  if (slot && slot.name === 'emerald' && typeof slot.slot === 'number') {
+    try {
+      await bot.clickWindow(slot.slot, 0, 1);
+      clicks++;
+      await new Promise(res => setTimeout(res, 100));
+    } catch (err) {
+      console.log(`❌ clickWindow xatolik: ${err.message}`);
     }
-    console.log(`✅ ${clicks} ta emerald inventarga olindi`);
-    await goToCraftingTableAndCraft();
-  } catch (err) {
-    console.log('❌ Xatolik:', err.message);
   }
-});
+}
 
 
   async function goToCraftingTableAndCraft() {
