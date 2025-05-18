@@ -50,20 +50,25 @@ function startBot() {
     }, 5000);
   });
 
-  bot.on('windowOpen', async (window) => {
-    console.log('🪟 Do‘kon ochildi, emeraldlar olinmoqda...');
-    try {
-      for (let slot of window.slots) {
-        if (slot && slot.name === 'emerald') {
-          await bot.clickWindow(slot.slot, 0, 1); // shift-click
-        }
+bot.on('windowOpen', async (window) => {
+  console.log('🪟 Do‘kon ochildi, emeraldlar olinmoqda...');
+  try {
+    let clicks = 0;
+    for (let i = 0; i < window.slots.length && clicks < 36; i++) {
+      const slot = window.slots[i];
+      if (slot && slot.name === 'emerald') {
+        await bot.clickWindow(slot.slot, 0, 1); // shift+click
+        clicks++;
+        await new Promise(res => setTimeout(res, 100)); // ozgina kutish
       }
-      console.log('✅ Emeraldlar inventarga olindi');
-      await goToCraftingTableAndCraft();
-    } catch (err) {
-      console.log('❌ Xatolik:', err.message);
     }
-  });
+    console.log(`✅ ${clicks} ta emerald inventarga olindi`);
+    await goToCraftingTableAndCraft();
+  } catch (err) {
+    console.log('❌ Xatolik:', err.message);
+  }
+});
+
 
   async function goToCraftingTableAndCraft() {
     const mcData = mcDataLoader(bot.version);
