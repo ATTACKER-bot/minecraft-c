@@ -1,96 +1,17 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const { Vec3 } = require('vec3');
-const mcDataLoader = require('minecraft-data');
 
 const app = express();
 let bot;
 
 const config = {
-  host: 'hypixel.uz',
-  port: 25566,
-  version: '1.12',
-  username: 'AT_nether_bot6',
-  password: 'abdu2006',
-  loginPassword: '87787787',
+  host: 'play.pika-network.net',
+  port: 25565,
+  version: '1.12', // yoki kerakli versiyani yozing
+  username: 'attacker_yt',
+  loginPassword: '88a88a88',
+  controller: 'mineside'
 };
-
-function delay(ms) {
-  return new Promise(res => setTimeout(res, ms));
-}
-
-async function collectEmeraldsFromChest(window) {
-  const mcData = mcDataLoader(bot.version);
-  const emeraldId = mcData.itemsByName.emerald.id;
-
-  let emeraldSlots = window.slots.filter(slot => slot && slot.type === emeraldId);
-
-  console.log(`🟢 ${emeraldSlots.length} ta emerald slot topildi.`);
-
-  for (const slot of emeraldSlots) {
-    try {
-      await bot.clickWindow(slot.slot, 0, 1); // 1 = shift-click
-      await delay(150);
-    } catch (err) {
-      console.log(`❌ clickWindow xatolik: ${err.message}`);
-    }
-  }
-
-  window.close();
-  console.log('🧰 Chest yopildi. Endi craft qilinadi...');
-  await delay(1000);
-  await goToCraftingTableAndCraft();
-}
-
-async function goToCraftingTableAndCraft() {
-  const mcData = mcDataLoader(bot.version);
-  const table = bot.findBlock({
-    matching: block => block.name === 'crafting_table',
-    maxDistance: 6
-  });
-
-  if (!table) {
-    console.log('❌ Crafting table topilmadi');
-    return;
-  }
-
-  const emeraldCount = bot.inventory.count(mcData.itemsByName.emerald.id);
-  const craftAmount = Math.floor(emeraldCount / 9);
-  if (craftAmount < 1) {
-    console.log('❌ Yetarli emerald yo‘q');
-    return;
-  }
-
-  const recipe = bot.recipesFor(mcData.itemsByName.emerald_block.id, null, 1, table)[0];
-  if (!recipe) {
-    console.log('❌ Emerald block recipe topilmadi');
-    return;
-  }
-
-  const movements = new Movements(bot, mcData);
-  bot.pathfinder.setMovements(movements);
-
-  console.log('🚶 Crafting tablega borilmoqda...');
-  await bot.pathfinder.goto(new goals.GoalBlock(table.position.x, table.position.y, table.position.z));
-
-  try {
-    await bot.craft(recipe, craftAmount, table);
-    console.log(`✅ ${craftAmount} dona emerald block craft qilindi.`);
-
-    const emeraldBlocks = bot.inventory.items().filter(i => i.name === 'emerald_block');
-    for (const item of emeraldBlocks) {
-      await bot.tossStack(item);
-    }
-    console.log('🗑️ Emerald blocklar otildi');
-
-    setTimeout(() => {
-      bot.chat('/is shop Ores');
-    }, 3000);
-  } catch (err) {
-    console.log(`❌ Craft xatolik: ${err.message}`);
-  }
-}
 
 function startBot() {
   bot = mineflayer.createBot({
@@ -98,50 +19,86 @@ function startBot() {
     port: config.port,
     version: config.version,
     username: config.username,
+    auth: 'offline'
   });
 
-  bot.loadPlugin(pathfinder);
-
   bot.on('messagestr', (message) => {
-    console.log(message);
-    if (message.includes('/register')) {
-      bot.chat(`/register ${config.password} ${config.password}`);
+    console.log('📨 Chat:', message);
+    if (message.toLowerCase().includes('/register')) {
+      bot.chat(`/register ${config.loginPassword} ${config.loginPassword}`);
     }
-    if (message.includes('/login')) {
+    if (message.toLowerCase().includes('/login')) {
       bot.chat(`/login ${config.loginPassword}`);
     }
   });
 
   bot.once('spawn', () => {
-    console.log('✅ Bot spawn bo‘ldi!');
+    console.log('✅ Bot serverga kirdi');
 
     setTimeout(() => {
-      bot.chat('/is warp end');
-      console.log('📦 /is warp end komandasi yuborildi');
-
-      setTimeout(() => {
-        bot.chat('/is shop Ores');
-        console.log('📥 /is shop Ores komandasi yuborildi');
-      }, 5000);
-    }, 5000);
-  });
-
-  bot.on('windowOpen', async (window) => {
-    if (window.type === 'chest') {
-      console.log('🧱 Chest ochildi — emeraldlar olinmoqda...');
-      await collectEmeraldsFromChest(window);
-    }
-  });
-
-  bot.on('death', () => {
-    console.log('☠️ Bot o‘ldi. /back yozilmoqda...');
-    setTimeout(() => {
-      bot.chat('/back');
+      bot.chat('/skyblock');
+      console.log('📦 /skyblock buyruq yuborildi');
     }, 3000);
   });
 
+  // Skyblock GUI ochilganda uni tanlaydi
+  bot.on('windowOpen', async (window) => {
+    const slot = window.slots.find(item => item && item.name.toLowerCase().includes('skyblock'));
+    if (slot) {
+      try {
+        await bot.clickWindow(slot.slot, 0, 0);
+        console.log('✅ Skyblock GUI tanlandi');
+      } catch (err) {
+        console.log('❌ Skyblock slot tanlashda xato:', err.message);
+      }
+    }
+  });
+
+  // Skyblock'ga o‘tib bo‘lgach
+  bot.on('spawn', () => {
+    setTimeout(() => {
+      bot.chat('/is visit mineside');
+      console.log('🌍 /is visit mineside yuborildi');
+    }, 7000);
+
+    // Har 60 sekundda sakrash
+    setInterval(() => {
+      bot.setControlState('jump', true);
+      setTimeout(() => bot.setControlState('jump', false), 500);
+    }, 60000);
+  });
+
+  // O‘lsa yana visit qiladi
+  bot.on('death', () => {
+    console.log('💀 Bot o‘ldi, qayta /is visit mineside');
+    setTimeout(() => {
+      bot.chat('/is visit mineside');
+    }, 5000);
+  });
+
+  // Nazorat qilish (chat orqali buyruqlar)
+  bot.on('chat', (username, message) => {
+    if (username === config.controller) {
+      if (message.startsWith('+ ')) {
+        const msg = message.slice(2);
+        bot.chat(msg);
+      } else if (message === 'tpat1') {
+        bot.chat(`/tpa ${config.controller}`);
+      }
+    }
+  });
+
+  // Har doim eng yaqin playerga qarasin
+  bot.on('physicTick', () => {
+    const target = bot.nearestEntity(e => e.type === 'player');
+    if (target) {
+      const pos = target.position.offset(0, target.height, 0);
+      bot.lookAt(pos);
+    }
+  });
+
   bot.on('end', () => {
-    console.log('⚠️ Bot serverdan chiqdi. Qayta ulanmoqda...');
+    console.log('🔁 Bot serverdan chiqdi. Qayta ulanmoqda...');
     setTimeout(startBot, 5000);
   });
 
@@ -152,6 +109,7 @@ function startBot() {
 
 startBot();
 
+// Web server (Uptime uchun)
 app.get('/', (req, res) => {
   res.send('✅ Bot ishlayapti!');
 });
