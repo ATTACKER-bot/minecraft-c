@@ -7,7 +7,7 @@ let bot;
 const config = {
   host: 'play.pika-network.net',
   port: 25565,
-  version: '1.20.1', // yoki kerakli versiyani yozing
+  version: '1.16.5', // yoki kerakli versiyani yozing
   username: 'attacker_yt',
   loginPassword: '88a88a88',
   controller: 'mineside'
